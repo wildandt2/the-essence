@@ -7,6 +7,10 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+// ================= ROOT =================
+  app.get("/", (req, res) => {
+    res.send("Backend is running ");
+  });
 
 // ================= LOGIN =================
 app.post("/api/login", async (req, res) => {
