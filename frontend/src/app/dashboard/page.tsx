@@ -48,6 +48,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [orderType, setOrderType] = useState("Dine In");
   const [showCart, setShowCart] = useState(true);
+  const [flyingItem, setFlyingItem] = useState<MenuItem | null>(null);
+
 
   //  FORMAT RUPIAH
   const formatRupiah = (number: number) => {
@@ -226,48 +228,64 @@ export default function Dashboard() {
   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
     {/* ================= LEFT MENU ================= */}
-    <div className="lg:col-span-2">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {filteredMenu.map((item) => (
-          <div
-            key={item.id}
-            className="bg-white rounded-2xl shadow hover:shadow-xl transition overflow-hidden"
+      {/* ================= LEFT MENU ================= */}
+  <div className="lg:col-span-2">
+
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+      {filteredMenu.map((item) => (
+        <div
+          key={item.id}
+          className={`bg-white rounded-2xl shadow overflow-hidden p-3 transition duration-200
+          ${
+            clickedId === item.id
+              ? "scale-105 ring-2 ring-green-500"
+              : "hover:shadow-xl hover:-translate-y-1"
+          }`}
+        >
+
+          {/* IMAGE */}
+          <div className="bg-[#f5f5f5] rounded-lg mb-3 relative overflow-hidden">
+
+            {/* BADGE */}
+            {getQty(item.id) > 0 && (
+              <div className="absolute top-1 right-1 bg-green-800 text-white text-xs px-2 py-0.5 rounded-full z-10">
+                {getQty(item.id)}
+              </div>
+            )}
+
+            <img
+              src={item.image}
+              className="w-full h-32 object-cover transition duration-200 hover:scale-105"
+            />
+          </div>
+
+          {/* TEXT */}
+          <h2 className="font-semibold text-[#6f4e37] text-sm">
+            {item.name}
+          </h2>
+
+          <p className="text-gray-600 text-xs mb-2">
+            {formatRupiah(item.price)}
+          </p>
+
+          {/* BUTTON */}
+          <button
+            onClick={() => {
+              addToCart(item);
+              setClickedId(item.id);
+
+              setTimeout(() => setClickedId(null), 200);
+            }}
+            className={`mt-2 w-full py-1 rounded-lg text-sm border flex items-center justify-center transition transform
+            ${
+              clickedId === item.id
+                ? "scale-110 bg-green-700 text-white"
+                : "hover:bg-green-700 hover:text-white"
+            }`}
           >
-            <div className="bg-[#f5f5f5] p-2 rounded-lg mb-3 relative">
-
-              {/* BADGE */}
-              {getQty(item.id) > 0 && (
-                <div className="absolute top-1 right-1 bg-green-800 text-white text-xs px-2 py-0.5 rounded-full">
-                  {getQty(item.id)}
-                </div>
-              )}
-
-              <img
-                src={item.image}
-                className="w-full h-36 object-cover"
-              />
-              
-            </div>
-
-            <h2 className="font-semibold text-[#6f4e37] text-sm">
-              {item.name}
-            </h2>
-
-             <p className="text-gray-500 text-xs mb-2">
-              {formatRupiah(item.price)}
-            </p>
-
-            <button
-              onClick={() => addToCart(item)}
-              className={`mt-3 w-10 h-10 rounded-full border flex items-center justify-center transition transform
-              ${
-                clickedId === item.id
-                  ? "scale-125 bg-green-700 text-white"
-                  : "hover:bg-green-700 hover:text-white  text-gray-300"
-              }`}
-            >
-              +
-            </button>
+            Add
+          </button>
           </div>
         ))}
       </div>
@@ -290,8 +308,10 @@ export default function Dashboard() {
       <p className="text-xs text-gray-500">#000001</p>
     </div>
 
-    <button className="w-10 h-10 border rounded-full">≡</button>
-  </div>
+      <button className="w-10 h-10 border rounded-full hover:bg-gray-100 transition">
+        ≡
+      </button>
+    </div>
 
   {/* ORDER TYPE */}
   <div className="flex bg-gray-200 rounded-full p-1 mb-4">
@@ -317,7 +337,7 @@ export default function Dashboard() {
     <div className="flex gap-2">
       <input
         className="flex-1 border rounded-full px-3 py-1 text-sm text-gray-500"
-        placeholder="Stephen"
+        placeholder="Wills"
       />
 
       <select className="border rounded-full px-3 py-1 text-sm text-gray-400">
@@ -328,38 +348,62 @@ export default function Dashboard() {
   </div>
 
   {/* ORDER LIST */}
-  <div className="bg-white rounded-xl p-3 mb-4 max-h-60 overflow-y-auto">
+  <div className="bg-white rounded-xl p-3 mb-4 max-h-64 overflow-y-auto space-y-3">
 
-    {cart.map((item) => (
-      <div key={item.id} className="flex gap-3 mb-3">
-
+      {cart.map((item) => (
+        <div
+          key={item.id}
+          className={`flex gap-3 p-2 rounded-lg transition ${
+            clickedId === item.id
+              ? "bg-green-50 scale-[1.02]"
+              : "hover:bg-gray-50"
+          }`}
+        >
+          {/* IMAGE */}
         <img
           src={item.image}
           className="w-12 h-12 rounded-lg object-cover"
         />
-
+          {/* INFO */}
         <div className="flex-1">
           <p className="text-sm font-semibold text-black">{item.name}</p>
           <p className="text-xs text-gray-800">
             {formatRupiah(item.price)}
           </p>
 
-          {/* NOTE */}
-          {item.note && (
-            <p className="text-xs text-gray-600">
-              {item.note}
-            </p>
-          )}
-        </div>
+          {/* NOTE INPUT */}
+          <input
+              type="text"
+              placeholder="Note..."
+              value={item.note || ""}
+              onChange={(e) =>
+                updateNote(item.id, e.target.value)
+              }
+              className="mt-1 w-full text-xs border rounded px-1 py-1 text-gray-300"
+            />
+          </div>
 
         {/* QTY */}
-        <div className="flex items-center gap-1 text-gray-500">
-          <button onClick={() => decreaseQty(item.id)}>-</button>
+        <div className="flex flex-col items-center gap-1">
 
-          <span>{item.qty}</span>
+            <button
+              onClick={() => increaseQty(item.id)}
+              className="w-6 h-6 border rounded hover:bg-gray-200 active:scale-90 transition text-gray-300"
+            >
+              +
+            </button>
 
-          <button onClick={() => increaseQty(item.id)}>+</button>
-        </div>
+            <span className="text-sm text-gray-800">
+              {item.qty}
+            </span>
+
+            <button
+              onClick={() => decreaseQty(item.id)}
+              className="w-6 h-6 border rounded hover:bg-gray-200 active:scale-90 transition text-gray-300"
+            >
+              -
+            </button>
+          </div>
 
         {/* TOTAL */}
         <div className="text-sm font-semibold text-gray-600">
