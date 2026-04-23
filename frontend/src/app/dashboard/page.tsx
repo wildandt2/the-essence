@@ -1,7 +1,6 @@
 "use client";
-
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 
 type MenuItem = {
@@ -37,6 +36,7 @@ const menu: MenuItem[] = [
   { id: 7, name: "French Fries", price: 15, image: "/frenchfries.png", category: "Snack" },
   { id: 8, name: "Cinnamon Roll", price: 25, image: "/cinnamon.png", category: "Snack" },
   { id: 9, name: "Pancake", price: 15, image: "/pancake.png", category: "Snack" },
+  { id: 10, name: "Pure Tea", price: 10, image: "/puretea.png", category: "Tea" },
 ];
 
 export default function Dashboard() {
@@ -45,10 +45,17 @@ export default function Dashboard() {
   const [category, setCategory] = useState("All");
   const [clickedId, setClickedId] = useState<number | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [orderType, setOrderType] = useState("Dine In");
   const [showCart, setShowCart] = useState(true);
   const [flyingItem, setFlyingItem] = useState<MenuItem | null>(null);
+  const [time, setTime] = useState("");
+  useEffect(() => {
+  const interval = setInterval(() => {
+    setTime(new Date().toLocaleTimeString());
+  }, 1000);
+  return () => clearInterval(interval);
+  }, []);
 
 
   //  FORMAT RUPIAH
@@ -103,7 +110,6 @@ export default function Dashboard() {
   };
       const updateQty = (id: number, qty: number) => {
         if (qty < 1) return;
-
         setCart((prev) =>
           prev.map((item) =>
             item.id === id ? { ...item, qty } : item
@@ -139,16 +145,6 @@ export default function Dashboard() {
       router.push("/login");
     };
 
-    const fetchOrders = async () => {
-      setLoading(true);
-
-      const res = await fetch("http://localhost:5000/api/orders");
-      const data = await res.json();
-
-    setOrders(data);
-    setLoading(false);
-    };
-
     function setOrders(data: CartItem) {
       throw new Error("Function not implemented.");
     }
@@ -158,14 +154,48 @@ export default function Dashboard() {
           item.id === id ? { ...item, note } : item
     )
   );
+
 };
+    const today = new Date().toLocaleDateString("en-US", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
+
+    // handle hold (auto repeat)
+    const startHold = (fn: () => void) => {
+      fn();
+
+      const timeout = setTimeout(() => {
+        const interval = setInterval(fn, 200);
+
+        const stop = () => {
+          clearInterval(interval);
+          window.removeEventListener("mouseup", stop);
+          window.removeEventListener("touchend", stop);
+        };
+
+        window.addEventListener("mouseup", stop);
+        window.addEventListener("touchend", stop);
+      }, 300); // delay sebelum auto start
+
+      const stopAll = () => {
+        clearTimeout(timeout);
+        window.removeEventListener("mouseup", stopAll);
+        window.removeEventListener("touchend", stopAll);
+      };
+
+      window.addEventListener("mouseup", stopAll);
+      window.addEventListener("touchend", stopAll);
+    };
   return (
 
 <div className="bg-[#e9f0ea] min-h-screen p-6">
 
   {/* ================= HEADER ================= */}
-  <div className="flex justify-between items-center mb-6">
-
+  <div className="flex justify-between items-center mb-2">
     {/* LEFT */}
     <div className={`${showCart ? "lg:col-span-2" : "lg:col-span-3"} transition-all`}>
       <img src="/theessence.png" className="w-10" />
@@ -175,11 +205,11 @@ export default function Dashboard() {
     </div>
 
     {/* RIGHT PROFILE */}
+
     <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-xl shadow">
       <div className="w-8 h-8 rounded-full bg-green-800 text-white flex items-center justify-center">
         {user?.name?.charAt(0) || "U"}
       </div>
-
       <div className="text-sm">
         <p className="font-semibold text-gray-800">{user?.name}</p>
         <p className="text-gray-500 text-xs">Cashier</p>
@@ -194,26 +224,34 @@ export default function Dashboard() {
     </div>
   </div>
 
-  {/* ================= SEARCH ================= */}
-  <div className="flex items-center bg-white px-3 py-2 rounded-xl shadow-sm border mb-4">
-    <Search className="w-4 h-4 text-gray-500" />
+  {/* ================= LEFT SEARCH ================= */}
+  <div className="w-2/3">
+      <div className="flex items-center bg-white px-3 py-2 rounded-xl shadow-sm border">
+        <Search className="w-4 h-4 text-gray-500" />
+        <input
+          type="text"
+          placeholder="Search menu..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="ml-2 w-full outline-none text-sm text-gray-800"
+        />
+      </div>
+    </div>
 
-    <input
-      type="text"
-      placeholder="Search menu..."
-      value={search}
-      onChange={(e) => setSearch(e.target.value)}
-      className="ml-2 w-full outline-none text-sm text-gray-800 placeholder-gray-400"
-    />
-  </div>
+ {/* RIGHT: DATE TIME */}
+    <div className="text-right text-gray-600">
+        <p className="text-sm text-gray-700">{today}</p>
+        <p className="text-lg font-bold text-green-900"></p>
+          {time}
+    </div>
 
   {/* ================= CATEGORY ================= */}
-  <div className="flex gap-2 mb-6">
+  <div className="flex gap-2 mb-2">
     {["All", "Coffee", "Tea", "Snack"].map((cat) => (
       <button
         key={cat}
         onClick={() => setCategory(cat)}
-       className={`px-4 py-1 rounded-full border text-sm transition ${
+        className={`px-4 py-1 rounded-full border text-sm transition ${
           category === cat
             ? "bg-green-800 text-white"
             : "bg-white text-gray-400 hover:bg-gray-100"
@@ -228,7 +266,6 @@ export default function Dashboard() {
   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
     {/* ================= LEFT MENU ================= */}
-      {/* ================= LEFT MENU ================= */}
   <div className="lg:col-span-2">
 
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -291,7 +328,6 @@ export default function Dashboard() {
       </div>
 
     </div>
-
 
     {/* ================= RIGHT CART ================= */}
     <div className="bg-white p-5 rounded-2xl shadow h-fit sticky top-6">
@@ -383,28 +419,46 @@ export default function Dashboard() {
             />
           </div>
 
-        {/* QTY */}
-        <div className="flex flex-col items-center gap-1">
+        {/* QTY CONTROL (VERTICAL + HOLD) */}
+        <div className="flex flex-col items-center gap-0.5">
 
-            <button
-              onClick={() => increaseQty(item.id)}
-              className="w-6 h-6 border rounded hover:bg-gray-200 active:scale-90 transition text-gray-300"
-            >
-              +
-            </button>
+          {/* PLUS */}
+          <button
+            onMouseDown={() => startHold(() => increaseQty(item.id))}
+            onTouchStart={() => startHold(() => increaseQty(item.id))}
+            className="w-5 h-5 text-xs border rounded hover:bg-green-700 text-gray-300 hover:text-white transition flex items-center justify-center"
+          >
+            +
+          </button>
 
-            <span className="text-sm text-gray-800">
-              {item.qty}
-            </span>
+          {/* INPUT */}
+          <input
+            type="text"
+            value={item.qty}
+            onChange={(e) =>
+              updateQty(item.id, Number(e.target.value))
+            }
+            className="w-7 text-center border rounded text-xs text-gray-500"
+          />
 
-            <button
-              onClick={() => decreaseQty(item.id)}
-              className="w-6 h-6 border rounded hover:bg-gray-200 active:scale-90 transition text-gray-300"
-            >
-              -
-            </button>
-          </div>
+          {/* MINUS */}
+          <button
+            onMouseDown={() => startHold(() => decreaseQty(item.id))}
+            onTouchStart={() => startHold(() => decreaseQty(item.id))}
+            className="w-5 h-5 text-xs border rounded hover:bg-red-500 text-gray-300 hover:text-white transition flex items-center justify-center"
+          >
+            -
+          </button>
 
+          {/* REMOVE */}
+          <button
+            onClick={() => removeItem(item.id)}
+            className="text-xs text-red-500 mt-1 hover:underline"
+          >
+            remove
+          </button>
+
+        </div>
         {/* TOTAL */}
         <div className="text-sm font-semibold text-gray-600">
           {formatRupiah(item.qty * item.price)}
